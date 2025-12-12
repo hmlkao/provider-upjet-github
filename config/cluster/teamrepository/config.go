@@ -8,9 +8,8 @@ func Configure(p *config.Provider) {
 		r.Kind = "TeamRepository"
 		r.ShortGroup = "team"
 
-		r.References["repository"] = config.Reference{
-			TerraformName: "github_repository",
-		}
+		// Drop auto-generated repository reference to avoid import cycle with repo package
+		delete(r.References, "repository")
 		r.References["team_id"] = config.Reference{
 			TerraformName: "github_team",
 		}

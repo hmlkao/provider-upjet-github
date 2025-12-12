@@ -15,8 +15,10 @@ import (
 	environmentvariable "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/environmentvariable"
 	organizationactionssecret "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/organizationactionssecret"
 	organizationactionsvariable "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/organizationactionsvariable"
+	organizationpermissions "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/organizationpermissions"
 	repositoryaccesslevel "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/repositoryaccesslevel"
 	repositorypermissions "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/repositorypermissions"
+	runnergroup "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/actions/runnergroup"
 	organization "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/enterprise/organization"
 	organizationruleset "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/enterprise/organizationruleset"
 	providerconfig "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/providerconfig"
@@ -40,6 +42,7 @@ import (
 	members "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/members"
 	team "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/team"
 	teammembership "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/teammembership"
+	teamrepository "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/teamrepository"
 	teamsettings "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/teamsettings"
 	teamsyncgroupmapping "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/team/teamsyncgroupmapping"
 	membership "github.com/crossplane-contrib/provider-upjet-github/internal/controller/namespaced/user/membership"
@@ -55,8 +58,10 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		environmentvariable.Setup,
 		organizationactionssecret.Setup,
 		organizationactionsvariable.Setup,
+		organizationpermissions.Setup,
 		repositoryaccesslevel.Setup,
 		repositorypermissions.Setup,
+		runnergroup.Setup,
 		organization.Setup,
 		organizationruleset.Setup,
 		providerconfig.Setup,
@@ -80,6 +85,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		members.Setup,
 		team.Setup,
 		teammembership.Setup,
+		teamrepository.Setup,
 		teamsettings.Setup,
 		teamsyncgroupmapping.Setup,
 		membership.Setup,
@@ -101,8 +107,10 @@ func SetupGated(mgr ctrl.Manager, o controller.Options) error {
 		environmentvariable.SetupGated,
 		organizationactionssecret.SetupGated,
 		organizationactionsvariable.SetupGated,
+		organizationpermissions.SetupGated,
 		repositoryaccesslevel.SetupGated,
 		repositorypermissions.SetupGated,
+		runnergroup.SetupGated,
 		organization.SetupGated,
 		organizationruleset.SetupGated,
 		providerconfig.SetupGated,
@@ -126,6 +134,7 @@ func SetupGated(mgr ctrl.Manager, o controller.Options) error {
 		members.SetupGated,
 		team.SetupGated,
 		teammembership.SetupGated,
+		teamrepository.SetupGated,
 		teamsettings.SetupGated,
 		teamsyncgroupmapping.SetupGated,
 		membership.SetupGated,

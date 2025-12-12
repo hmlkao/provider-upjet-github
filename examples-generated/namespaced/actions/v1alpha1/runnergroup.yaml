@@ -1,0 +1,30 @@
+apiVersion: actions.github.m.upbound.io/v1alpha1
+kind: RunnerGroup
+metadata:
+  annotations:
+    meta.upbound.io/example-id: actions/v1alpha1/runnergroup
+  labels:
+    testing.upbound.io/example-name: example
+  name: example
+  namespace: upbound-system
+spec:
+  forProvider:
+    name: example
+    selectedRepositoryIds:
+    - ${github_repository.example.repo_id}
+    visibility: selected
+
+---
+
+apiVersion: repo.github.m.upbound.io/v1alpha1
+kind: Repository
+metadata:
+  annotations:
+    meta.upbound.io/example-id: actions/v1alpha1/runnergroup
+  labels:
+    testing.upbound.io/example-name: example
+  name: example
+  namespace: upbound-system
+spec:
+  forProvider:
+    name: my-repository

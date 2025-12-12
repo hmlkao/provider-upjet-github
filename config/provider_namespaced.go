@@ -11,8 +11,10 @@ import (
 
 	ujconfig "github.com/crossplane/upjet/v2/pkg/config"
 
+	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actions"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsenvironmentsecret"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsenvironmentvariable"
+	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsorganizationpermissions"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsorganizationsecret"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsorganizationvariable"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/actionsrepositoryaccesslevel"
@@ -42,6 +44,7 @@ import (
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/team"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/teammembers"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/teammembership"
+	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/teamrepository"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/teamsettings"
 	"github.com/crossplane-contrib/provider-upjet-github/config/namespaced/teamsyncgroupmapping"
 	"github.com/crossplane/upjet/v2/pkg/registry/reference"
@@ -65,10 +68,10 @@ func GetProviderNamespaced(ctx context.Context) (*ujconfig.Provider, error) {
 
 	for _, configure := range []func(provider *ujconfig.Provider){
 		// add custom config functions
-		// actions.Configure, // DISABLED due to wrong type association
+		actions.Configure,
 		actionsenvironmentsecret.Configure,
 		actionsenvironmentvariable.Configure,
-		// actionsorganizationpermissions.Configure, // DISABLED due to wrong type association
+		actionsorganizationpermissions.Configure,
 		actionsorganizationsecret.Configure,
 		actionsorganizationvariable.Configure,
 		actionsrepositoryaccesslevel.Configure,
@@ -97,7 +100,7 @@ func GetProviderNamespaced(ctx context.Context) (*ujconfig.Provider, error) {
 		team.Configure,
 		teammembers.Configure,
 		teammembership.Configure,
-		// teamrepository.Configure, // DISABLED due to import cycle
+		teamrepository.Configure,
 		teamsettings.Configure,
 		teamsyncgroupmapping.Configure,
 		repositoryenvironment.Configure,

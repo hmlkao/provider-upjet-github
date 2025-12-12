@@ -19,6 +19,9 @@ func (tr *Team) Hub() {}
 func (tr *TeamMembership) Hub() {}
 
 // Hub marks this type as a conversion hub.
+func (tr *TeamRepository) Hub() {}
+
+// Hub marks this type as a conversion hub.
 func (tr *TeamSettings) Hub() {}
 
 // Hub marks this type as a conversion hub.

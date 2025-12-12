@@ -7,6 +7,9 @@ func Configure(p *config.Provider) {
 	p.AddResourceConfigurator("github_actions_runner_group", func(r *config.Resource) {
 
 		r.ShortGroup = "actions"
-		//TODO: implemant an array of references
+		// Runner group name/selected_repository_ids should remain plain values (IDs),
+		// not Crossplane references. Drop auto-injected refs to avoid type mismatch.
+		delete(r.References, "name")
+		delete(r.References, "selected_repository_ids")
 	})
 }
