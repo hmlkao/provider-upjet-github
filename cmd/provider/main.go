@@ -60,11 +60,13 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.WriteTo(io.Discard)))
 
 	zl := zap.New(zap.UseDevMode(*debug))
-	logr := logging.NewLogrLogger(zl.WithName("provider-upjet-sgithub"))
-	// The controller-runtime runs with a no-op logger by default. It is
-	// *very* verbose even at info level, so we only provide it a real
-	// logger when we're running in debug mode.
-	ctrl.SetLogger(zl)
+	logr := logging.NewLogrLogger(zl.WithName("provider-upjet-github"))
+	if *debug {
+		// The controller-runtime runs with a no-op logger by default. It is
+		// *very* verbose even at info level, so we only provide it a real
+		// logger when we're running in debug mode.
+		ctrl.SetLogger(zl)
+	}
 
 	// currently, we configure the jitter to be the 5% of the poll interval
 	pollJitter := time.Duration(float64(*pollInterval) * 0.05)
@@ -114,7 +116,7 @@ func main() {
 			},
 		},
 		Provider:              provider,
-		SetupFn:               clients.TerraformSetupBuilder(provider.TerraformProvider),
+		SetupFn:               clients.TerraformSetupBuilder(provider.TerraformProvider, logr),
 		PollJitter:            pollJitter,
 		OperationTrackerStore: tjcontroller.NewOperationStore(logr),
 	}
@@ -133,7 +135,7 @@ func main() {
 			},
 		},
 		Provider:              provider,
-		SetupFn:               clients.TerraformSetupBuilder(provider.TerraformProvider),
+		SetupFn:               clients.TerraformSetupBuilder(provider.TerraformProvider, logr),
 		PollJitter:            pollJitter,
 		OperationTrackerStore: tjcontroller.NewOperationStore(logr),
 	}

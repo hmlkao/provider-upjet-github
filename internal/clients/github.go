@@ -7,7 +7,10 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"sync"
+	"time"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	tfsdk "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -30,6 +33,7 @@ const (
 	errUnmarshalCredentials          = "cannot unmarshal github credentials as JSON"
 	errProviderConfigurationBuilder  = "cannot build configuration for terraform provider block"
 	errTerraformProviderMissingOwner = "github provider app_auth needs owner key to be set"
+	errGitHubTokenNotReady           = "github token not ready yet"
 
 	// provider config variables
 	keyBaseURL               = "base_url"
@@ -120,7 +124,6 @@ func setParameterConfigs(creds githubConfig, cnf terraform.ProviderConfiguration
 }
 
 func terraformProviderConfigurationBuilder(creds githubConfig) (terraform.ProviderConfiguration, error) {
-
 	cnf := terraform.ProviderConfiguration{}
 
 	if creds.BaseURL != nil {
@@ -135,15 +138,54 @@ func terraformProviderConfigurationBuilder(creds githubConfig) (terraform.Provid
 	cnf = setParameterConfigs(creds, cnf)
 
 	return cnf, nil
-
 }
+
+// The terraform provider currently doesn't refresh installation tokens automatically
+// Therefore, the terraform provider config needs to be refreshed at least every hour
+// Once this PR is merged to terraform provider, the cache expiry can be removed
+// https://github.com/integrations/terraform-provider-github/pull/2695
+
+type CachedTerraformSetup struct {
+	setup  *terraform.Setup
+	expiry time.Time
+}
+
+const (
+	tfSetupCacheTTL = time.Minute * 55
+)
 
 // TerraformSetupBuilder builds Terraform a terraform.SetupFn function which returns Terraform provider setup configuration
 //
 //gocyclo:ignore
-func TerraformSetupBuilder(tfProvider *schema.Provider) terraform.SetupFn {
+func TerraformSetupBuilder(tfProvider *schema.Provider, l logging.Logger) terraform.SetupFn {
+	var tfSetupLock sync.RWMutex
+	tfSetups := make(map[string]CachedTerraformSetup)
 	return func(ctx context.Context, client client.Client, mg resource.Managed) (terraform.Setup, error) {
 		ps := terraform.Setup{}
+
+		configRefName, err := getProviderConfigName(mg)
+		if err != nil {
+			return ps, errors.Wrap(err, "cannot get provider config name")
+		}
+
+		tfSetup, ok := tfSetups[configRefName]
+		if ok && tfSetup.expiry.After(time.Now()) {
+			return *tfSetup.setup, nil
+		}
+
+		l.Debug("Locking in order to update credentials")
+		unlocked := tfSetupLock.TryLock()
+		if !unlocked {
+			// it is actually save to return the 'old' token since
+			// it is still valid for 7 hours.
+			if ok {
+				return *tfSetup.setup, nil
+			}
+
+			return ps, errors.New(errGitHubTokenNotReady)
+		}
+		l.Debug("Lock succedeed")
+		defer unlockMutex(&tfSetupLock, l)
 
 		pcSpec, err := resolveProviderConfig(ctx, client, mg)
 		if err != nil {
@@ -172,9 +214,21 @@ func TerraformSetupBuilder(tfProvider *schema.Provider) terraform.SetupFn {
 			return ps, errors.Wrap(err, "failed to configure the Terraform Github provider meta")
 		}
 
-		return ps, nil
+		tfSetups[configRefName] = CachedTerraformSetup{
+			setup:  &ps,
+			expiry: time.Now().Add(tfSetupCacheTTL),
+		}
 
+		l.Info("Refreshed Github Token", "configName", configRefName, "expiry", tfSetups[configRefName].expiry)
+
+		return ps, nil
 	}
+}
+
+func unlockMutex(lock *sync.RWMutex, l logging.Logger) {
+	l.Debug("Initiating unlock")
+	lock.Unlock()
+	l.Debug("Unlock succeeded")
 }
 
 func configureNoForkGithubClient(ctx context.Context, ps *terraform.Setup, p schema.Provider) error {
@@ -206,6 +260,17 @@ func toSharedPCSpec(pc *clusterv1beta1.ProviderConfig) (*namespacedv1beta1.Provi
 	var mSpec namespacedv1beta1.ProviderConfigSpec
 	err = json.Unmarshal(data, &mSpec)
 	return &mSpec, err
+}
+
+func getProviderConfigName(mg resource.Managed) (string, error) {
+	switch managed := mg.(type) {
+	case resource.LegacyManaged:
+		return managed.GetProviderConfigReference().Name, nil
+	case resource.ModernManaged:
+		return managed.GetProviderConfigReference().Name, nil
+	default:
+		return "", errors.New("resource is not a managed resource")
+	}
 }
 
 func resolveProviderConfig(ctx context.Context, crClient client.Client, mg resource.Managed) (*namespacedv1beta1.ProviderConfigSpec, error) {
